@@ -1,7 +1,13 @@
 class DmPatternsChart {
     options = {};
+
     scene;
-    backgroundSector;
+
+    bgSector;
+    point;
+    arc1;
+    arc2;
+    arc3;
 
     constructor(options) {
         const defaultOptions = {
@@ -9,7 +15,7 @@ class DmPatternsChart {
             values: [50, 50, 50],
             titles: ['Оперативный', 'Тактический', 'Стратегический'],
             titlesHidden: false,
-            interestHidden: false,
+            percentsHidden: false,
             dottedLinesHidden: false,
             colors: {
                 ellipse: '#000',
@@ -32,8 +38,21 @@ class DmPatternsChart {
 
     render() {
         this.createScene();
-        this.renderSector();
-        this.renderPoints();
+
+        this.renderBgSector();
+        this.renderValueSector();
+        this.renderPoint();
+        this.renderArc1();
+        this.renderArc2();
+        this.renderArc3();
+
+        if (!this.options.dottedLinesHidden) {
+            this.renderDottedLines();
+        }
+
+        if (!this.options.percentsHidden) {
+            this.renderPercents();
+        }
     }
 
     createScene() {
@@ -52,47 +71,54 @@ class DmPatternsChart {
         return svg;
     }
 
-    renderSector() {
+    renderBgSector() {
         const containerWidth = this.options.container.offsetWidth;
-        const containerHeight = this.options.container.offsetHeight;
-        const sectorRatio = 1080 / 600;
-        let sectorWidth = containerWidth;
-        const sectorHeight = containerWidth / sectorRatio;
+
+        const sceneRightPadding = this.options.sizes.arc / 2;
+
+        const sectorRadius = containerWidth - sceneRightPadding;
+
+        const sectorHalfHeight = findOppositeSide(sectorRadius, 15);
+        const sectorArcHalfHeight = findOppositeSide(sectorRadius, 20);
+
+        const topSectorPointX = findAdjacentSide(sectorRadius, 15) - sceneRightPadding;
+
         const x = 0;
-        const y = containerHeight / 2;
+        const y = sectorArcHalfHeight;
 
         const sector = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        sector.setAttribute('d', `M ${x} ${y} L ${x + sectorWidth} ${y - sectorHeight / 2} A ${x + sectorWidth} ${y + sectorHeight / 2} 0 0 1 ${x + sectorWidth} ${y + sectorHeight / 2} Z`);
+        sector.setAttribute(
+            'd',
+            `
+            M ${x} ${y} 
+            L ${x + topSectorPointX} ${y - sectorHalfHeight} 
+            A ${sectorRadius} ${sectorRadius} 0 0 1 ${x + topSectorPointX} ${y + sectorHalfHeight} 
+            Z
+            `
+        );
         sector.setAttribute('fill', this.options.colors.background);
-
         this.scene.appendChild(sector);
 
-        const rightPoint = [sectorWidth, y];
-        sectorWidth -= sector.getBBox().width - containerWidth;
-        sectorWidth -= this.options.sizes.arc / 2;
-
-        sector.setAttribute('d', `M ${x} ${y} L ${x + sectorWidth} ${y - sectorHeight / 2} A ${x + sectorWidth} ${y + sectorHeight / 2} 0 0 1 ${x + sectorWidth} ${y + sectorHeight / 2} Z`);
-
-        this.backgroundSector = {
+        this.bgSector = {
             svg: sector,
             props: {
-                sectorWidth,
-                startSector: [x, y],
-                topPoint: [x + sectorWidth, y + sectorHeight / 2],
-                bottomPoint: [x + sectorWidth, y - sectorHeight / 2],
-                rightPoint,
-                rx: x + sectorWidth,
-                ry: y + sectorHeight / 2
+                sectorHalfHeight,
+                sectorArcHalfHeight,
+                topSectorPointX,
+                x,
+                y,
+                sectorRadius,
+                sceneRightPadding,
             }
-        };
+        }
     }
 
-    renderPoints() {
+    renderPoint() {
         const containerWidth = this.options.container.offsetWidth;
-        const pointRadius = containerWidth / 10 / 2;
-        const y = this.options.container.offsetHeight / 2;
 
-        // Круг
+        const pointRadius = containerWidth / 10 / 2;
+        const y = this.bgSector.props.y;
+
         const point = document.createElementNS(
             'http://www.w3.org/2000/svg',
             'circle'
@@ -103,97 +129,234 @@ class DmPatternsChart {
         point.setAttribute('fill', this.options.colors.ellipse);
         this.scene.appendChild(point);
 
-        const step = this.backgroundSector.svg.getBBox().width / 3;
-
-        // Дуга 1
-        // let movedStart = this.movePointOnCircle(
-        //     this.backgroundSector.props.startSector[0],
-        //     this.backgroundSector.props.startSector[1],
-        //     this.backgroundSector.props.topPoint[0],
-        //     this.backgroundSector.props.topPoint[1],
-        //     2
-        // );
-        // let movedEnd = this.movePointOnCircle(
-        //     this.backgroundSector.props.startSector[0],
-        //     this.backgroundSector.props.startSector[1],
-        //     this.backgroundSector.props.bottomPoint[0],
-        //     this.backgroundSector.props.bottomPoint[1],
-        //     -2
-        // );
-        // const arc1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        // arc1.setAttribute('d', `M ${movedStart[0] - 4} ${movedStart[1]} A ${this.backgroundSector.props.rx - 4} ${this.backgroundSector.props.ry + 4} 0 0 0 ${movedEnd[0] - 4} ${movedEnd[1]}`);
-        // arc1.setAttribute('fill', 'none');
-        // arc1.setAttribute('stroke', this.options.colors.ellipse);
-        // arc1.setAttribute('stroke-width', this.options.sizes.arc);
-        // this.scene.appendChild(arc1);
-        //
-        // // Дуга 2
-        // movedStart = this.movePointOnCircle(
-        //     this.backgroundSector.props.startSector[0],
-        //     this.backgroundSector.props.startSector[1],
-        //     this.backgroundSector.props.topPoint[0] - step,
-        //     this.backgroundSector.props.topPoint[1],
-        //     -4
-        // );
-        // movedEnd = this.movePointOnCircle(
-        //     this.backgroundSector.props.startSector[0],
-        //     this.backgroundSector.props.startSector[1],
-        //     this.backgroundSector.props.bottomPoint[0] - step,
-        //     this.backgroundSector.props.bottomPoint[1],
-        //     4
-        // );
-        // const arc2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        // arc2.setAttribute('d', `M ${movedStart[0] - 8} ${movedStart[1]} A ${this.backgroundSector.props.rx - 8} ${this.backgroundSector.props.ry + 8} 0 0 0 ${movedEnd[0] - 8} ${movedEnd[1]}`);
-        // arc2.setAttribute('fill', 'none');
-        // arc2.setAttribute('stroke', this.options.colors.ellipse);
-        // arc2.setAttribute('stroke-width', this.options.sizes.arc);
-        // this.scene.appendChild(arc2);
-        //
-        // // Дуга 3
-        // movedStart = this.movePointOnCircle(
-        //     this.backgroundSector.props.startSector[0],
-        //     this.backgroundSector.props.startSector[1],
-        //     this.backgroundSector.props.topPoint[0] - step * 2,
-        //     this.backgroundSector.props.topPoint[1],
-        //     -25
-        // );
-        // movedEnd = this.movePointOnCircle(
-        //     this.backgroundSector.props.startSector[0],
-        //     this.backgroundSector.props.startSector[1],
-        //     this.backgroundSector.props.bottomPoint[0] - step * 2,
-        //     this.backgroundSector.props.bottomPoint[1],
-        //     25
-        // );
-        // const arc3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        // arc3.setAttribute('d', `M ${movedStart[0] - 50} ${movedStart[1]} A ${this.backgroundSector.props.rx + 50} ${this.backgroundSector.props.ry - 50} 0 0 0 ${movedEnd[0] - 50} ${movedEnd[1]}`);
-        // arc3.setAttribute('fill', 'none');
-        // arc3.setAttribute('stroke', this.options.colors.ellipse);
-        // arc3.setAttribute('stroke-width', this.options.sizes.arc);
-        // this.scene.appendChild(arc3);
+        this.point = {
+            svg: point,
+            props: {
+                pointRadius,
+                y,
+                x: pointRadius
+            },
+        };
     }
 
-    movePointOnCircle(centerX, centerY, pointX, pointY, deltaAngle) {
-        // Переводим угол в радианы
-        deltaAngle = deltaAngle * (Math.PI / 180);
+    renderArc1() {
+        const {
+            sectorArcHalfHeight,
+            sectorRadius,
+            y: sectorStartY,
+            sceneRightPadding,
+        } = this.bgSector.props;
 
-        // Вычисляем вектор от центра до точки
-        const vectorX = pointX - centerX;
-        const vectorY = pointY - centerY;
+        const topArcPointX = findAdjacentSide(sectorRadius, 20) - sceneRightPadding;
 
-        // Вычисляем новый угол
-        const currentAngle = Math.atan2(vectorY, vectorX);
-        const newAngle = currentAngle + deltaAngle;
+        const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        arc.setAttribute(
+            'd',
+            `
+            M ${topArcPointX} ${sectorStartY - sectorArcHalfHeight} 
+            A ${sectorRadius} ${sectorRadius} 0 0 1 ${topArcPointX} ${sectorStartY + sectorArcHalfHeight}
+            `
+        );
+        arc.setAttribute('fill', 'none');
+        arc.setAttribute('stroke', this.options.colors.ellipse);
+        arc.setAttribute('stroke-width', this.options.sizes.arc);
+        this.scene.appendChild(arc);
 
-        // Вычисляем новые координаты точки
-        const radius = Math.sqrt(vectorX * vectorX + vectorY * vectorY);
-        const newX = centerX + radius * Math.cos(newAngle);
-        const newY = centerY + radius * Math.sin(newAngle);
+        this.arc1 = {
+            svg: arc,
+            props: {
+                topArcPointX,
+                startPoint: [topArcPointX, sectorStartY - sectorArcHalfHeight],
+                endPoint: [topArcPointX, sectorStartY + sectorArcHalfHeight],
+            },
+        };
+    }
 
-        // Возвращаем новые координаты точки
-        return [newX, newY]
+    renderArc2() {
+        const {
+            sectorRadius,
+            y: sectorStartY,
+            sceneRightPadding,
+        } = this.bgSector.props;
+
+        const topArcPointX = findAdjacentSide(sectorRadius / 3 * 2, 20) - sceneRightPadding;
+
+        const topArcPointY = findOppositeSide(sectorRadius / 3 * 2, 20);
+
+        const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        arc.setAttribute(
+            'd',
+            `
+            M ${topArcPointX} ${sectorStartY - topArcPointY} 
+            A ${sectorRadius / 3 * 2} ${sectorRadius / 3 * 2} 0 0 1 ${topArcPointX} ${sectorStartY + topArcPointY}
+            `
+        );
+        arc.setAttribute('fill', 'none');
+        arc.setAttribute('stroke', this.options.colors.ellipse);
+        arc.setAttribute('stroke-width', this.options.sizes.arc);
+        this.scene.appendChild(arc);
+
+        this.arc2 = {
+            svg: arc,
+            props: {
+                topArcPointX,
+                startPoint: [topArcPointX, sectorStartY - topArcPointY],
+                endPoint: [topArcPointX, sectorStartY + topArcPointY],
+            },
+        };
+    }
+
+    renderArc3() {
+        const {
+            sectorRadius,
+            y: sectorStartY,
+            sceneRightPadding,
+        } = this.bgSector.props;
+
+        const topArcPointX = findAdjacentSide(sectorRadius / 3, 20) - sceneRightPadding;
+
+        const topArcPointY = findOppositeSide(sectorRadius / 3, 20);
+
+        const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        arc.setAttribute(
+            'd',
+            `
+            M ${topArcPointX} ${sectorStartY - topArcPointY} 
+            A ${sectorRadius / 3} ${sectorRadius / 3} 0 0 1 ${topArcPointX} ${sectorStartY + topArcPointY}
+            `
+        );
+        arc.setAttribute('fill', 'none');
+        arc.setAttribute('stroke', this.options.colors.ellipse);
+        arc.setAttribute('stroke-width', this.options.sizes.arc);
+        this.scene.appendChild(arc);
+
+        this.arc3 = {
+            svg: arc,
+            props: {
+                topArcPointX,
+                startPoint: [topArcPointX, sectorStartY - topArcPointY],
+                endPoint: [topArcPointX, sectorStartY + topArcPointY],
+            },
+        };
     }
 
     renderDottedLines() {
-        // TODO: Рендер пунктирной линии
+        const { sectorRadius, x: sectorStartX } = this.bgSector.props;
+        const { x: pointX, y: pointY } = this.point.props;
+
+        const sectorPartWidth = sectorRadius / 3;
+        const endY = this.options.container.offsetHeight - 1;
+
+        const linesStarts = [
+            [pointX, pointY],
+            [sectorStartX + sectorPartWidth, pointY],
+            [sectorStartX + sectorPartWidth * 2, pointY],
+            [sectorStartX + sectorPartWidth * 3, pointY],
+        ];
+        const linesEnds = [
+            [pointX, endY],
+            [sectorStartX + sectorPartWidth, endY],
+            [sectorStartX + sectorPartWidth * 2, endY],
+            [sectorStartX + sectorPartWidth * 3, endY],
+        ];
+
+        // Создаем контейнер для пунктирных линий
+        const dottedLinesContainer = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'g'
+        );
+
+        // Добавляем линии в контейнер
+        for (let i = 0; i < 4; i++) {
+            const line = document.createElementNS(
+                'http://www.w3.org/2000/svg',
+                'line'
+            );
+            line.setAttribute('x1', linesStarts[i][0]);
+            line.setAttribute('y1', linesStarts[i][1]);
+            line.setAttribute('x2', linesEnds[i][0]);
+            line.setAttribute('y2', linesEnds[i][1]);
+            line.setAttribute('stroke', 'black');
+            line.setAttribute('stroke-dasharray', '8');
+            dottedLinesContainer.appendChild(line);
+        }
+
+        // Добавляем контейнер в сцену
+        this.scene.appendChild(dottedLinesContainer);
     }
+
+    renderPercents() {
+        const { sectorRadius, x: sectorStartX } = this.bgSector.props;
+        const { x: pointX } = this.point.props;
+
+        const sectorPartWidth = sectorRadius / 3;
+        const endY = this.options.container.offsetHeight - 1;
+
+        const borderCoordinates = [
+            [pointX, endY],
+            [sectorStartX + sectorPartWidth, endY],
+            [sectorStartX + sectorPartWidth * 2, endY],
+            [sectorStartX + sectorPartWidth * 3, endY],
+        ];
+
+        const fontSize = sectorPartWidth / 4;
+
+        const textCoordinates = [
+            this.getMiddlePoint(borderCoordinates[0], borderCoordinates[1]),
+            this.getMiddlePoint(borderCoordinates[1], borderCoordinates[2]),
+            this.getMiddlePoint(borderCoordinates[2], borderCoordinates[3]),
+        ];
+
+        const percentsContainer = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'g'
+        );
+
+        for (let i = 0; i < this.options.values.length; i++) {
+            const percent = this.options.values[i];
+
+            const text = document.createElementNS(
+                'http://www.w3.org/2000/svg',
+                'text'
+            );
+            text.setAttribute('x', textCoordinates[i][0]);
+            text.setAttribute('y', textCoordinates[i][1]);
+            text.setAttribute('text-anchor', 'middle');
+            text.style.fontSize = `${fontSize}px`;
+            text.style.fontWeight = '600';
+
+            text.textContent = `${percent}%`;
+
+            percentsContainer.appendChild(text);
+        }
+
+        this.scene.appendChild(percentsContainer);
+    }
+
+    getMiddlePoint(point1, point2) {
+        return [
+            (point1[0] + point2[0]) / 2,
+            (point1[1] + point2[1]) / 2,
+        ];
+    }
+
+    renderValueSector() {
+        // TODO: Отображение сектора с значениями
+    }
+}
+
+function findOppositeSide(hypotenuse, angleInDegrees) {
+    // Преобразование угла из градусов в радианы
+    const angleInRadians = angleInDegrees * (Math.PI / 180);
+
+    // Нахождение противолежащего катета с использованием синуса
+    return hypotenuse * Math.sin(angleInRadians);
+}
+
+function findAdjacentSide(hypotenuse, angleInDegrees) {
+    // Преобразование угла из градусов в радианы
+    const angleInRadians = angleInDegrees * (Math.PI / 180);
+
+    // Нахождение прилежащего катета с использованием косинуса
+    return hypotenuse * Math.cos(angleInRadians);
 }
