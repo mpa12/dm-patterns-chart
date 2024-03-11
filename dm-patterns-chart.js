@@ -21,9 +21,11 @@ class DmPatternsChart {
                 ellipse: '#000',
                 background: '#fefab7',
                 value: '#F9EC0E',
+                dottedLine: '#000',
             },
             sizes: {
-                arc: 15,
+                arc: 10,
+                pointRadius: undefined
             }
         };
 
@@ -40,11 +42,11 @@ class DmPatternsChart {
         this.createScene();
 
         this.renderBgSector();
+        this.createPoint();
+        this.createArc1();
+        this.createArc2();
+        this.createArc3();
         this.renderValueSector();
-        this.renderPoint();
-        this.renderArc1();
-        this.renderArc2();
-        this.renderArc3();
 
         if (!this.options.dottedLinesHidden) {
             this.renderDottedLines();
@@ -53,6 +55,11 @@ class DmPatternsChart {
         if (!this.options.percentsHidden) {
             this.renderPercents();
         }
+
+        this.renderPoint();
+        this.renderArc1();
+        this.renderArc2();
+        this.renderArc3();
     }
 
     createScene() {
@@ -109,14 +116,15 @@ class DmPatternsChart {
                 y,
                 sectorRadius,
                 sceneRightPadding,
+                sectorStart: [x, y],
             }
         }
     }
 
-    renderPoint() {
+    createPoint() {
         const containerWidth = this.options.container.offsetWidth;
 
-        const pointRadius = containerWidth / 10 / 2;
+        const pointRadius = this.options.sizes.pointRadius || containerWidth / 10 / 2;
         const y = this.bgSector.props.y;
 
         const point = document.createElementNS(
@@ -127,7 +135,6 @@ class DmPatternsChart {
         point.setAttribute('cy', y);
         point.setAttribute('r', pointRadius);
         point.setAttribute('fill', this.options.colors.ellipse);
-        this.scene.appendChild(point);
 
         this.point = {
             svg: point,
@@ -138,8 +145,11 @@ class DmPatternsChart {
             },
         };
     }
+    renderPoint() {
+        this.scene.appendChild(this.point.svg);
+    }
 
-    renderArc1() {
+    createArc1() {
         const {
             sectorArcHalfHeight,
             sectorRadius,
@@ -168,11 +178,15 @@ class DmPatternsChart {
                 topArcPointX,
                 startPoint: [topArcPointX, sectorStartY - sectorArcHalfHeight],
                 endPoint: [topArcPointX, sectorStartY + sectorArcHalfHeight],
+                arcCenter: [sectorRadius, sectorStartY],
             },
         };
     }
+    renderArc1() {
+        this.scene.appendChild(this.arc1.svg);
+    }
 
-    renderArc2() {
+    createArc2() {
         const {
             sectorRadius,
             y: sectorStartY,
@@ -202,11 +216,15 @@ class DmPatternsChart {
                 topArcPointX,
                 startPoint: [topArcPointX, sectorStartY - topArcPointY],
                 endPoint: [topArcPointX, sectorStartY + topArcPointY],
+                arcCenter: [sectorRadius / 3 * 2, sectorStartY],
             },
         };
     }
+    renderArc2() {
+        this.scene.appendChild(this.arc2.svg);
+    }
 
-    renderArc3() {
+    createArc3() {
         const {
             sectorRadius,
             y: sectorStartY,
@@ -236,8 +254,12 @@ class DmPatternsChart {
                 topArcPointX,
                 startPoint: [topArcPointX, sectorStartY - topArcPointY],
                 endPoint: [topArcPointX, sectorStartY + topArcPointY],
+                arcCenter: [sectorRadius / 3, sectorStartY],
             },
         };
+    }
+    renderArc3() {
+        this.scene.appendChild(this.arc3.svg);
     }
 
     renderDottedLines() {
@@ -276,7 +298,7 @@ class DmPatternsChart {
             line.setAttribute('y1', linesStarts[i][1]);
             line.setAttribute('x2', linesEnds[i][0]);
             line.setAttribute('y2', linesEnds[i][1]);
-            line.setAttribute('stroke', 'black');
+            line.setAttribute('stroke', this.options.colors.dottedLine);
             line.setAttribute('stroke-dasharray', '8');
             dottedLinesContainer.appendChild(line);
         }
@@ -341,7 +363,50 @@ class DmPatternsChart {
     }
 
     renderValueSector() {
-        // TODO: Отображение сектора с значениями
+        const { values } = this.options;
+
+        const { sectorStart, sceneRightPadding } = this.bgSector.props;
+        const { arcCenter: arc3Center } = this.arc3.props;
+        const { arcCenter: arc2Center } = this.arc2.props;
+        const { arcCenter: arc1Center } = this.arc1.props;
+
+        const arc3Height = findOppositeSide(arc3Center[0], 15 * values[0] / 100);
+        const arc3Width = findAdjacentSide(arc3Center[0], 15 * values[0] / 100) - sceneRightPadding;
+
+        const arc2Height = findOppositeSide(arc2Center[0], 15 * values[1] / 100);
+        const arc2Width = findAdjacentSide(arc2Center[0], 15 * values[1] / 100) - sceneRightPadding;
+
+        const arc1Height = findOppositeSide(arc1Center[0], 15 * values[2] / 100);
+        const arc1Width = findAdjacentSide(arc1Center[0], 15 * values[2] / 100) - sceneRightPadding;
+
+        const coordinates = [
+            sectorStart,
+            [arc3Width, arc3Center[1] - arc3Height],
+            [arc2Width, arc2Center[1] - arc2Height],
+            [arc1Width, arc1Center[1] - arc1Height],
+            [arc1Width, arc1Center[1] + arc1Height],
+            [arc2Width, arc2Center[1] + arc2Height],
+            [arc3Width, arc3Center[1] + arc3Height],
+        ];
+
+        // Создаем элемент дуги
+        const arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+        const dAttribute = `
+        M ${coordinates[0].join(' ')} 
+        L ${coordinates[1].join(' ')} 
+        L ${coordinates[2].join(' ')} 
+        L ${coordinates[3].join(' ')}
+        A ${arc1Center[0]} ${arc1Center[0]} 0 0 1 ${coordinates[4].join(' ')}
+        L ${coordinates[4].join(' ')} 
+        L ${coordinates[5].join(' ')} 
+        L ${coordinates[6].join(' ')} 
+        L ${coordinates[0].join(' ')} 
+        Z`;
+        arcPath.setAttribute('d', dAttribute);
+        arcPath.setAttribute('fill', this.options.colors.value);
+
+        this.scene.appendChild(arcPath);
     }
 }
 
