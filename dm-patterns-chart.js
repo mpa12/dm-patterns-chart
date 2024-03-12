@@ -22,10 +22,13 @@ class DmPatternsChart {
                 background: '#fefab7',
                 value: '#F9EC0E',
                 dottedLine: '#000',
+                percents: '#000',
+                titles: '#000',
             },
             sizes: {
                 arc: 10,
-                pointRadius: undefined
+                pointRadius: undefined,
+                titleFontSize: undefined,
             }
         };
 
@@ -56,6 +59,10 @@ class DmPatternsChart {
             this.renderPercents();
         }
 
+        if (!this.options.titlesHidden) {
+            this.renderTitles();
+        }
+
         this.renderPoint();
         this.renderArc1();
         this.renderArc2();
@@ -68,8 +75,8 @@ class DmPatternsChart {
             'svg'
         );
 
-        svg.setAttribute('width', this.options.container.offsetWidth);
-        svg.setAttribute('height', this.options.container.offsetHeight);
+        svg.setAttribute('width', this.getElementContentWidth(this.options.container));
+        svg.setAttribute('height', this.getElementContentHeight(this.options.container));
 
         this.options.container.appendChild(svg);
 
@@ -79,16 +86,16 @@ class DmPatternsChart {
     }
 
     renderBgSector() {
-        const containerWidth = this.options.container.offsetWidth;
+        const containerWidth = this.getElementContentWidth(this.options.container);
 
         const sceneRightPadding = this.options.sizes.arc / 2;
 
         const sectorRadius = containerWidth - sceneRightPadding;
 
-        const sectorHalfHeight = findOppositeSide(sectorRadius, 15);
-        const sectorArcHalfHeight = findOppositeSide(sectorRadius, 20);
+        const sectorHalfHeight = this.findOppositeSide(sectorRadius, 15);
+        const sectorArcHalfHeight = this.findOppositeSide(sectorRadius, 20);
 
-        const topSectorPointX = findAdjacentSide(sectorRadius, 15) - sceneRightPadding;
+        const topSectorPointX = this.findAdjacentSide(sectorRadius, 15) - sceneRightPadding;
 
         const x = 0;
         const y = sectorArcHalfHeight;
@@ -122,7 +129,7 @@ class DmPatternsChart {
     }
 
     createPoint() {
-        const containerWidth = this.options.container.offsetWidth;
+        const containerWidth = this.getElementContentWidth(this.options.container);
 
         const pointRadius = this.options.sizes.pointRadius || containerWidth / 10 / 2;
         const y = this.bgSector.props.y;
@@ -157,7 +164,7 @@ class DmPatternsChart {
             sceneRightPadding,
         } = this.bgSector.props;
 
-        const topArcPointX = findAdjacentSide(sectorRadius, 20) - sceneRightPadding;
+        const topArcPointX = this.findAdjacentSide(sectorRadius, 20) - sceneRightPadding;
 
         const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arc.setAttribute(
@@ -193,9 +200,9 @@ class DmPatternsChart {
             sceneRightPadding,
         } = this.bgSector.props;
 
-        const topArcPointX = findAdjacentSide(sectorRadius / 3 * 2, 20) - sceneRightPadding;
+        const topArcPointX = this.findAdjacentSide(sectorRadius / 3 * 2, 20) - sceneRightPadding;
 
-        const topArcPointY = findOppositeSide(sectorRadius / 3 * 2, 20);
+        const topArcPointY = this.findOppositeSide(sectorRadius / 3 * 2, 20);
 
         const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arc.setAttribute(
@@ -231,9 +238,9 @@ class DmPatternsChart {
             sceneRightPadding,
         } = this.bgSector.props;
 
-        const topArcPointX = findAdjacentSide(sectorRadius / 3, 20) - sceneRightPadding;
+        const topArcPointX = this.findAdjacentSide(sectorRadius / 3, 20) - sceneRightPadding;
 
-        const topArcPointY = findOppositeSide(sectorRadius / 3, 20);
+        const topArcPointY = this.findOppositeSide(sectorRadius / 3, 20);
 
         const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arc.setAttribute(
@@ -267,7 +274,7 @@ class DmPatternsChart {
         const { x: pointX, y: pointY } = this.point.props;
 
         const sectorPartWidth = sectorRadius / 3;
-        const endY = this.options.container.offsetHeight - 1;
+        const endY = this.getElementContentHeight(this.options.container) - 1;
 
         const linesStarts = [
             [pointX, pointY],
@@ -312,7 +319,7 @@ class DmPatternsChart {
         const { x: pointX } = this.point.props;
 
         const sectorPartWidth = sectorRadius / 3;
-        const endY = this.options.container.offsetHeight - 1;
+        const endY = this.getElementContentHeight(this.options.container) - 1;
 
         const borderCoordinates = [
             [pointX, endY],
@@ -344,6 +351,7 @@ class DmPatternsChart {
             text.setAttribute('x', textCoordinates[i][0]);
             text.setAttribute('y', textCoordinates[i][1]);
             text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('fill', this.options.colors.percents);
             text.style.fontSize = `${fontSize}px`;
             text.style.fontWeight = '600';
 
@@ -370,14 +378,14 @@ class DmPatternsChart {
         const { arcCenter: arc2Center } = this.arc2.props;
         const { arcCenter: arc1Center } = this.arc1.props;
 
-        const arc3Height = findOppositeSide(arc3Center[0], 15 * values[0] / 100);
-        const arc3Width = findAdjacentSide(arc3Center[0], 15 * values[0] / 100) - sceneRightPadding;
+        const arc3Height = this.findOppositeSide(arc3Center[0], 15 * values[0] / 100);
+        const arc3Width = this.findAdjacentSide(arc3Center[0], 15 * values[0] / 100) - sceneRightPadding;
 
-        const arc2Height = findOppositeSide(arc2Center[0], 15 * values[1] / 100);
-        const arc2Width = findAdjacentSide(arc2Center[0], 15 * values[1] / 100) - sceneRightPadding;
+        const arc2Height = this.findOppositeSide(arc2Center[0], 15 * values[1] / 100);
+        const arc2Width = this.findAdjacentSide(arc2Center[0], 15 * values[1] / 100) - sceneRightPadding;
 
-        const arc1Height = findOppositeSide(arc1Center[0], 15 * values[2] / 100);
-        const arc1Width = findAdjacentSide(arc1Center[0], 15 * values[2] / 100) - sceneRightPadding;
+        const arc1Height = this.findOppositeSide(arc1Center[0], 15 * values[2] / 100);
+        const arc1Width = this.findAdjacentSide(arc1Center[0], 15 * values[2] / 100) - sceneRightPadding;
 
         const coordinates = [
             sectorStart,
@@ -408,20 +416,83 @@ class DmPatternsChart {
 
         this.scene.appendChild(arcPath);
     }
-}
 
-function findOppositeSide(hypotenuse, angleInDegrees) {
-    // Преобразование угла из градусов в радианы
-    const angleInRadians = angleInDegrees * (Math.PI / 180);
+    renderTitles() {
+        const { sectorRadius, x: sectorStartX, y: sectorStartY } = this.bgSector.props;
+        const { x: pointX, pointRadius } = this.point.props;
 
-    // Нахождение противолежащего катета с использованием синуса
-    return hypotenuse * Math.sin(angleInRadians);
-}
+        const sectorPartWidth = sectorRadius / 3;
 
-function findAdjacentSide(hypotenuse, angleInDegrees) {
-    // Преобразование угла из градусов в радианы
-    const angleInRadians = angleInDegrees * (Math.PI / 180);
+        const borderCoordinates = [
+            [pointX + pointRadius, sectorStartY],
+            [sectorStartX + sectorPartWidth, sectorStartY],
+            [sectorStartX + sectorPartWidth * 2, sectorStartY],
+            [sectorStartX + sectorPartWidth * 3, sectorStartY],
+        ];
 
-    // Нахождение прилежащего катета с использованием косинуса
-    return hypotenuse * Math.cos(angleInRadians);
+        const fontSize = this.options.sizes.titleFontSize || sectorPartWidth / 13;
+
+        const textCoordinates = [
+            this.getMiddlePoint(borderCoordinates[0], borderCoordinates[1]),
+            this.getMiddlePoint(borderCoordinates[1], borderCoordinates[2]),
+            this.getMiddlePoint(borderCoordinates[2], borderCoordinates[3]),
+        ];
+
+        const titleContainer = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'g'
+        );
+
+        for (let i = 0; i < this.options.values.length; i++) {
+            const text = document.createElementNS(
+                'http://www.w3.org/2000/svg',
+                'text'
+            );
+            text.setAttribute('x', textCoordinates[i][0]);
+            text.setAttribute('y', textCoordinates[i][1]);
+            text.setAttribute('fill', this.options.colors.titles);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'central');
+            text.style.fontSize = `${fontSize}px`;
+            text.style.fontWeight = '600';
+
+            text.textContent = this.options.titles[i] || '';
+
+            titleContainer.appendChild(text);
+        }
+
+        this.scene.appendChild(titleContainer);
+    }
+
+    findOppositeSide(hypotenuse, angleInDegrees) {
+        // Преобразование угла из градусов в радианы
+        const angleInRadians = angleInDegrees * (Math.PI / 180);
+
+        // Нахождение противолежащего катета с использованием синуса
+        return hypotenuse * Math.sin(angleInRadians);
+    }
+
+    findAdjacentSide(hypotenuse, angleInDegrees) {
+        // Преобразование угла из градусов в радианы
+        const angleInRadians = angleInDegrees * (Math.PI / 180);
+
+        // Нахождение прилежащего катета с использованием косинуса
+        return hypotenuse * Math.cos(angleInRadians);
+    }
+
+    getElementContentWidth(element) {
+        const styles = window.getComputedStyle(element);
+        const padding = parseFloat(styles.paddingLeft) +
+            parseFloat(styles.paddingRight);
+
+        return element.clientWidth - padding;
+    }
+
+    getElementContentHeight(element) {
+        const styles = window.getComputedStyle(element);
+        const padding = parseFloat(styles.paddingTop) +
+            parseFloat(styles.paddingBottom);
+
+        return element.clientHeight - padding;
+    }
 }
