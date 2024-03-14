@@ -39,6 +39,8 @@ class DmPatternsChart {
         }
 
         this.render();
+
+        window.addEventListener('resize', this.rerender.bind(this));
     }
 
     render() {
@@ -67,6 +69,12 @@ class DmPatternsChart {
         this.renderArc1();
         this.renderArc2();
         this.renderArc3();
+    }
+
+    rerender() {
+        this.options.container.innerHTML = '';
+
+        this.render();
     }
 
     createScene() {
