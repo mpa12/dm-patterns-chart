@@ -323,6 +323,8 @@ class DmPatternsChart {
     }
 
     renderPercents() {
+        const TOP_SHIFT = -2;
+
         const { sectorRadius, x: sectorStartX } = this.bgSector.props;
         const { x: pointX } = this.point.props;
 
@@ -357,7 +359,7 @@ class DmPatternsChart {
                 'text'
             );
             text.setAttribute('x', textCoordinates[i][0]);
-            text.setAttribute('y', textCoordinates[i][1]);
+            text.setAttribute('y', textCoordinates[i][1] + TOP_SHIFT);
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('fill', this.options.colors.percents);
             text.style.fontSize = `${fontSize}px`;
