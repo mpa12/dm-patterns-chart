@@ -2,6 +2,8 @@
 
 Script for generating charts in svg format.
 
+[Demo](https://mpa12.github.io/dm-patterns-chart/)
+
 Examples:
 
 ![image](https://github.com/mpa12/dm-patterns-chart/assets/56753446/440fac18-4811-4f1c-b6b1-d817474ce1e8)
