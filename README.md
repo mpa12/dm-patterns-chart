@@ -1,6 +1,8 @@
 # dm-patterns-chart
 
-Скрипт для формирования графиков
+Script for generating charts in svg format.
+
+Examples:
 
 ![image](https://github.com/mpa12/dm-patterns-chart/assets/56753446/440fac18-4811-4f1c-b6b1-d817474ce1e8)
 
